@@ -3,8 +3,8 @@ const MongoDB = require("../utils/mongodb.util");
 const ApiError = require("../api-error");
 
 exports.create = async (req, res, next) => {
-    if (!req.body?.name) {
-        return next(new ApiError(400, "Name can not be empty"));
+    if (!req.body?.title) {
+        return next(new ApiError(400, "Title can not be empty"));
     }
 
     try {
@@ -23,9 +23,9 @@ exports.findAll = async (req, res, next) => {
 
     try {
         const bookService = new BookService(MongoDB.client);
-        const {name} = req.query;
-        if (name) {
-            documents = await bookService.findByName(name);
+        const {title} = req.query;
+        if (title) {
+            documents = await bookService.findByTitle(title);
         } else {
             documents = await bookService.find({});
         } 

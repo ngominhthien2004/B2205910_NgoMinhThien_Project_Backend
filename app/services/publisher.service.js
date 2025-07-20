@@ -22,7 +22,7 @@ class PublisherService {
         const publisher = this.extractPublisherData(payload);
         const result = await this.Publisher.findOneAndUpdate(
             publisher,
-            { $set: { favorite: publisher.favorite === true } },
+            { $set: publisher },
             { returnDocument: 'after', upsert: true }
         );
         return result;
@@ -63,10 +63,6 @@ class PublisherService {
             _id: ObjectId.isValid(id) ? new ObjectId(id) : null
         });
         return result;
-    }
-
-    async findFavorite() {
-        return await this.find({ favorite: true });
     }
 
     async deleteAll() {

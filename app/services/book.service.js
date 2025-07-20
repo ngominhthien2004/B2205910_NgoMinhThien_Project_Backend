@@ -11,7 +11,7 @@ class BookService {
             title: payload.title,
             price: payload.price,
             quantity: payload.quantity,
-            release: payload.release,
+            release: payload.release ? new Date(payload.release) : undefined,
             publisher: payload.publisher,
             author: payload.author,
         };
@@ -24,11 +24,7 @@ class BookService {
 
     async create(payload) {
         const book = this.extractBookData(payload);
-        const result = await this.Book.findOneAndUpdate(
-            book,
-            { $set: book },
-            { returnDocument: 'after', upsert: true }
-        );
+        const result = await this.Book.insertOne(book);
         return result;
     }
 
@@ -37,9 +33,9 @@ class BookService {
         return await cursor.toArray();
     }
 
-    async findByName(name) {
+    async findByTitle(title) {
         return await this.find({
-            name: { $regex: new RegExp(name), $options: 'i' }
+            title: { $regex: new RegExp(title), $options: 'i' }
         });
     }
 
