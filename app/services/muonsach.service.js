@@ -32,7 +32,8 @@ class MuonSachService {
             { $set: muonsach },
             { returnDocument: 'after', upsert: true }
         );
-        return result;
+        // Trả về document đã tạo
+        return result.value;
     }
 
     async find(filter) {
@@ -47,58 +48,81 @@ class MuonSachService {
     }
 
     async findById(id) {
+        if (!ObjectId.isValid(id)) {
+            return null;
+        }
         return await this.MuonSach.findOne({
-            _id: ObjectId.isValid(id) ? new ObjectId(id) : null
+            _id: new ObjectId(id)
         });
     }
 
     async update(id, payload) {
-        const filter = { 
-            _id: ObjectId.isValid(id) ? new ObjectId(id) : null 
-        };
-        const update = this.extractMuonSachData(payload);
+        if (!ObjectId.isValid(id)) {
+            console.log("Invalid ObjectId:", id);
+            return null;
+        }
+        const filter = { _id: new ObjectId(id) };
 
-        // Check if status is being updated to "Đã trả"
-        if (update.status === "Đã trả") {
+        // Kiểm tra document có tồn tại không
+        const existed = await this.MuonSach.findOne(filter);
+        console.log("Filter:", filter, "Existed:", existed);
+        if (!existed) {
+            return null;
+        }
+
+        // Nếu chỉ update status, merge với existed để không mất dữ liệu
+        let update = this.extractMuonSachData(payload);
+        if (Object.keys(update).length === 1 && update.status) {
+            update = { ...existed, status: update.status };
+        }
+        console.log("Update payload:", update);
+
+        // Check if status is being updated to "Đã trả" hoặc "returned"
+        if (update.status === "Đã trả" || update.status === "returned") {
             // Fetch the current record to get ngayTra (due date)
             const current = await this.MuonSach.findOne(filter);
             if (current && current.ngayTra) {
-                const actualReturnDate = payload.actualReturnDate ? new Date(payload.actualReturnDate) : new Date();
+                const ngayTraThucTe = payload.ngayTraThucTe ? new Date(payload.ngayTraThucTe) : new Date();
                 const dueDate = new Date(current.ngayTra);
-                if (actualReturnDate > dueDate) {
+                if (ngayTraThucTe > dueDate) {
                     // Calculate days late
                     const msPerDay = 24 * 60 * 60 * 1000;
-                    const daysLate = Math.ceil((actualReturnDate - dueDate) / msPerDay);
+                    const daysLate = Math.ceil((ngayTraThucTe - dueDate) / msPerDay);
                     // Example fine: 5000 VND per day late
                     update.fine = daysLate * 5000;
                     update.daysLate = daysLate;
-                    update.returnedAt = actualReturnDate;
                 } else {
                     update.fine = 0;
                     update.daysLate = 0;
-                    update.returnedAt = actualReturnDate;
                 }
+                update.ngayTraThucTe = ngayTraThucTe;
             }
         }
 
         const result = await this.MuonSach.findOneAndUpdate(
             filter,
             { $set: update },
-            { returnDocument: "after" }
+            { returnOriginal: false }
         );
-        return result;
+        console.log("Update result:", result);
+        return result.value;
     }
 
     async delete(id) {
+        if (!ObjectId.isValid(id)) {
+            return null;
+        }
         const result = await this.MuonSach.findOneAndDelete({
-            _id: ObjectId.isValid(id) ? new ObjectId(id) : null
+            _id: new ObjectId(id)
         });
-        return result;
+        // Trả về document đã xóa
+        return result.value;
     }
 
     async deleteAll() {
         const result = await this.MuonSach.deleteMany({});
-        return result;
+        // Trả về số lượng đã xóa
+        return result.deletedCount;
     }
 }
 

@@ -6,7 +6,13 @@ exports.create = async (req, res, next) => {
     try {
         const muonsachService = new MuonSachService(MongoDB.client);
         const document = await muonsachService.create(req.body);
-        return res.send(document);
+        if (!document) {
+            return next(new ApiError(500, "Không thể tạo phiếu mượn sách"));
+        }
+        return res.send({
+            message: "Tạo phiếu mượn sách thành công",
+            muonsach: document
+        });
     } catch (error) {
         return next(
             new ApiError(500, "An error occurred while creating the muonsach")
@@ -31,7 +37,11 @@ exports.findAll = async (req, res, next) => {
         );
     }
 
-    return res.send(documents);
+    // Thêm thông báo trả về danh sách
+    return res.send({
+        message: "Lấy danh sách phiếu mượn sách thành công",
+        muonsachs: documents
+    });
 };
 
 exports.findOne = async (req, res, next) => {
@@ -41,7 +51,11 @@ exports.findOne = async (req, res, next) => {
         if (!document) {
             return next(new ApiError(404, "MuonSach not found"));
         }
-        return res.send(document);
+        // Thêm thông báo trả về chi tiết
+        return res.send({
+            message: "Lấy thông tin phiếu mượn sách thành công",
+            muonsach: document
+        });
     } catch (error) {
         return next(
             new ApiError(
@@ -59,18 +73,14 @@ exports.update = async (req, res, next) => {
 
     try {
         const muonsachService = new MuonSachService(MongoDB.client);
-        const result = await muonsachService.update(req.params.id, req.body);
-        if (!result || !result.value) {
+        const updated = await muonsachService.update(req.params.id, req.body);
+        if (!updated) {
             return next(new ApiError(404, "MuonSach not found"));
         }
-        // If fine info is present, return it
-        const updated = result.value;
-        let response = { message: "MuonSach was updated successfully" };
-        if (typeof updated.fine !== "undefined") {
-            response.fine = updated.fine;
-            response.daysLate = updated.daysLate;
-        }
-        return res.send(response);
+        return res.send({
+            message: "Cập nhật phiếu mượn sách thành công",
+            muonsach: updated
+        });
     } catch (error) {
         return next(
             new ApiError(500, `Error updating muonsach with id=${req.params.id}`)
@@ -85,7 +95,7 @@ exports.delete = async (req, res, next) => {
         if (!document) {
             return next(new ApiError(404, "MuonSach not found"));
         }
-        return res.send({ message: "MuonSach was deleted successfully" });
+        return res.send({ message: "Xóa phiếu mượn sách thành công" });
     } catch (error) {
         return next(
             new ApiError(
@@ -101,7 +111,7 @@ exports.deleteAll = async (_req, res, next) => {
         const muonsachService = new MuonSachService(MongoDB.client);
         const deletedCount = await muonsachService.deleteAll();
         return res.send({ 
-            message: `${deletedCount} muonsachs were deleted successfully`
+            message: `Đã xóa thành công ${deletedCount} phiếu mượn sách`
          });
     } catch (error) {
         return next(
@@ -117,11 +127,15 @@ exports.changeStatus = async (req, res, next) => {
     }
     try {
         const muonsachService = new MuonSachService(MongoDB.client);
-        const result = await muonsachService.update(req.params.id, { status });
-        if (!result || !result.value) {
+        const updated = await muonsachService.update(req.params.id, { status });
+        console.log("Controller updated:", updated);
+        if (updated === null || updated === undefined) {
             return next(new ApiError(404, "MuonSach not found"));
         }
-        return res.send({ message: "Status updated successfully", status: result.value.status });
+        return res.send({
+            message: "Cập nhật trạng thái phiếu mượn sách thành công",
+            muonsach: updated
+        });
     } catch (error) {
         return next(
             new ApiError(500, `Error updating status for muonsach with id=${req.params.id}`)
