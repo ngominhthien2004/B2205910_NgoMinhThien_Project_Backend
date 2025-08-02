@@ -27,13 +27,8 @@ class MuonSachService {
 
     async create(payload) {
         const muonsach = this.extractMuonSachData(payload);
-        const result = await this.MuonSach.findOneAndUpdate(
-            muonsach,
-            { $set: muonsach },
-            { returnDocument: 'after', upsert: true }
-        );
-        // Trả về document đã tạo
-        return result.value;
+        const result = await this.MuonSach.insertOne(muonsach);
+        return result.insertedId ? muonsach : null;
     }
 
     async find(filter) {
