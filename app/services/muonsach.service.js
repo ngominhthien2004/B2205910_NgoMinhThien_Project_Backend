@@ -1,4 +1,6 @@
 const { ObjectId } = require('mongodb');
+const BookService = require("./book.service");
+const MongoDB = require("../utils/mongodb.util");
 
 class MuonSachService {
     constructor(client) {
@@ -57,20 +59,43 @@ class MuonSachService {
             return null;
         }
         const filter = { _id: new ObjectId(id) };
-
-        // Kiểm tra document có tồn tại không
         const existed = await this.MuonSach.findOne(filter);
         console.log("Filter:", filter, "Existed:", existed);
         if (!existed) {
             return null;
         }
 
-        // Nếu chỉ update status, merge với existed để không mất dữ liệu
         let update = this.extractMuonSachData(payload);
         if (Object.keys(update).length === 1 && update.status) {
             update = { ...existed, status: update.status };
         }
-        console.log("Update payload:", update);
+
+        // --- Bổ sung cập nhật availableCopies ---
+        // Lấy trạng thái cũ và mới
+        const prevStatus = existed.status;
+        const newStatus = update.status;
+        const idBook = existed.idBook;
+
+        // Nếu chuyển từ pending sang approved, giảm availableCopies
+        if (prevStatus === "pending" && newStatus === "approved") {
+            const bookService = new BookService(MongoDB.client);
+            const book = await bookService.findByIdBook(idBook);
+            if (book && book.availableCopies > 0) {
+                await bookService.update(book._id, { availableCopies: book.availableCopies - 1 });
+            }
+        }
+        // Nếu chuyển từ borrowed/approved sang returned, tăng availableCopies
+        if (
+            (prevStatus === "borrowed" || prevStatus === "approved") &&
+            newStatus === "returned"
+        ) {
+            const bookService = new BookService(MongoDB.client);
+            const book = await bookService.findByIdBook(idBook);
+            if (book) {
+                await bookService.update(book._id, { availableCopies: book.availableCopies + 1 });
+            }
+        }
+        // --- hết bổ sung ---
 
         // Check if status is being updated to "Đã trả" hoặc "returned"
         if (update.status === "Đã trả" || update.status === "returned") {
