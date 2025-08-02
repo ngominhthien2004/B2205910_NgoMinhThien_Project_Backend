@@ -14,6 +14,8 @@ class ReaderService {
             genderReader: payload.genderReader,
             addressReader: payload.addressReader,
             phoneReader: payload.phoneReader,
+            username: payload.username,
+            password: payload.password,
         };
         
         Object.keys(reader).forEach(
@@ -24,12 +26,8 @@ class ReaderService {
 
     async create(payload) {
         const reader = this.extractReaderData(payload);
-        const result = await this.Reader.findOneAndUpdate(
-            reader,
-            { $set: reader },
-            { returnDocument: 'after', upsert: true }
-        );
-        return result;
+        const result = await this.Reader.insertOne(reader);
+        return reader;
     }
 
     async find(filter) {
@@ -37,41 +35,57 @@ class ReaderService {
         return await cursor.toArray();
     }
 
-    async findByName(name) {
-        return await this.find({
-            name: { $regex: new RegExp(name), $options: 'i' }
-        });
+    async findByUsername(username) {
+        return await this.Reader.findOne({ username: username });
     }
 
-    async findById(id) {
-        return await this.Reader.findOne({
-            _id: ObjectId.isValid(id) ? new ObjectId(id) : null
-        });
+    async findById(idOrUsername) {
+        if (ObjectId.isValid(idOrUsername)) {
+            return await this.Reader.findOne({ _id: new ObjectId(idOrUsername) });
+        }
+        return await this.Reader.findOne({ username: idOrUsername });
     }
 
-    async update(id, payload) {
-        const filter = { 
-            _id: ObjectId.isValid(id) ? new ObjectId(id) : null 
-        };
+    async update(idOrUsername, payload) {
+        let filter;
+        if (ObjectId.isValid(idOrUsername)) {
+            filter = { _id: new ObjectId(idOrUsername) };
+        } else {
+            filter = { username: idOrUsername };
+        }
         const update = this.extractReaderData(payload);
         const result = await this.Reader.findOneAndUpdate(
             filter,
             { $set: update },
             { returnDocument: "after" }
         );
-        return result;
+        if (result.value) {
+            return result.value;
+        }
+        // Nếu không trả về document, thử truy vấn lại
+        const updatedDoc = await this.Reader.findOne(filter);
+        return updatedDoc;
     }
 
-    async delete(id) {
-        const result = await this.Reader.findOneAndDelete({
-            _id: ObjectId.isValid(id) ? new ObjectId(id) : null
-        });
-        return result;
+    async delete(idOrUsername) {
+        let filter;
+        if (ObjectId.isValid(idOrUsername)) {
+            filter = { _id: new ObjectId(idOrUsername) };
+        } else {
+            filter = { username: idOrUsername };
+        }
+        // Lấy thông tin trước khi xóa
+        const reader = await this.Reader.findOne(filter);
+        if (!reader) {
+            return null;
+        }
+        await this.Reader.deleteOne(filter);
+        return reader;
     }
 
     async deleteAll() {
         const result = await this.Reader.deleteMany({});
-        return result;
+        return result.deletedCount;
     }
 }
 

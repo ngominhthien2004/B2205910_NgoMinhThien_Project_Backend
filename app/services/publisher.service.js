@@ -25,7 +25,7 @@ class PublisherService {
             { $set: publisher },
             { returnDocument: 'after', upsert: true }
         );
-        return result;
+        return result.value;
     }
 
     async find(filter) {

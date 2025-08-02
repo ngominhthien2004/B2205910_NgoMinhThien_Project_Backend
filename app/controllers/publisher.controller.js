@@ -3,14 +3,18 @@ const MongoDB = require("../utils/mongodb.util");
 const ApiError = require("../api-error");
 
 exports.create = async (req, res, next) => {
-    if (!req.body?.name) {
-        return next(new ApiError(400, "Name can not be empty"));
+    // Sửa lại kiểm tra tên trường
+    if (!req.body?.namePublisher) {
+        return next(new ApiError(400, "namePublisher can not be empty"));
     }
 
     try {
         const publisherService = new PublisherService(MongoDB.client);
         const document = await publisherService.create(req.body);
-        return res.send(document);
+        return res.send({
+            message: "Publisher was created successfully",
+            publisher: document
+        });
     } catch (error) {
         return next(
             new ApiError(500, "An error occurred while creating the publisher")
@@ -92,26 +96,13 @@ exports.delete = async (req, res, next) => {
     }
 };
 
-exports.findAllFavorite = async (_req, res, next) => {
-    try {
-        const publisherService = new PublisherService(MongoDB.client);
-        const documents = await publisherService.findFavorite();
-        return res.send(documents);
-    } catch (error) {
-        return next(
-            new ApiError(
-                500, 
-                "An error occurred while retrieving favorite publishers")
-        );
-    }
-};
 
 exports.deleteAll = async (_req, res, next) => {
     try {
         const publisherService = new PublisherService(MongoDB.client);
-        const deletedCount = await publisherService.deleteAll();
+        const result = await publisherService.deleteAll();
         return res.send({ 
-            message: `${deletedCount} publishers were deleted successfully`
+            message: `${result.deletedCount} publishers were deleted successfully`
          });
     } catch (error) {
         return next(

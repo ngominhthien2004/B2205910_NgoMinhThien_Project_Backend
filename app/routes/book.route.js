@@ -4,16 +4,20 @@ const books = require('../controllers/book.controller');
 const router = express.Router();
 
 router.route('/')
-    .get(books.findAll)
+    .get(books.getAllBook) // lấy tất cả sách
     .post(books.create)
     .delete(books.deleteAll);
 
-router.route('/favorite')
-    .get(books.findAllFavorite);
+router.route('/available')
+    .get(books.getAvailableBook); // lấy sách còn availableCopies > 0
 
 router.route('/:id')
     .get(books.findOne)
     .put(books.update)
     .delete(books.delete);
+
+router.route('/title')
+    .get(books.findByTitle); // tìm kiếm sách theo tiêu đề
+
 
 module.exports = router;

@@ -6,12 +6,17 @@ class MuonSachService {
     }
 
     extractMuonSachData(payload) {
+        const allowedStatuses = ['pending', 'approved', 'borrowed', 'returned'];
+        let status = payload.status;
+        if (!allowedStatuses.includes(status)) {
+            status = 'pending';
+        }
         const muonsach = {
             idReader: payload.idReader,
             idBook: payload.idBook,
             ngayMuon: payload.ngayMuon,
             ngayTra: payload.ngayTra,
-            status: payload.status || "Đang mượn",
+            status: status,
         };
         
         Object.keys(muonsach).forEach(
@@ -52,6 +57,30 @@ class MuonSachService {
             _id: ObjectId.isValid(id) ? new ObjectId(id) : null 
         };
         const update = this.extractMuonSachData(payload);
+
+        // Check if status is being updated to "Đã trả"
+        if (update.status === "Đã trả") {
+            // Fetch the current record to get ngayTra (due date)
+            const current = await this.MuonSach.findOne(filter);
+            if (current && current.ngayTra) {
+                const actualReturnDate = payload.actualReturnDate ? new Date(payload.actualReturnDate) : new Date();
+                const dueDate = new Date(current.ngayTra);
+                if (actualReturnDate > dueDate) {
+                    // Calculate days late
+                    const msPerDay = 24 * 60 * 60 * 1000;
+                    const daysLate = Math.ceil((actualReturnDate - dueDate) / msPerDay);
+                    // Example fine: 5000 VND per day late
+                    update.fine = daysLate * 5000;
+                    update.daysLate = daysLate;
+                    update.returnedAt = actualReturnDate;
+                } else {
+                    update.fine = 0;
+                    update.daysLate = 0;
+                    update.returnedAt = actualReturnDate;
+                }
+            }
+        }
+
         const result = await this.MuonSach.findOneAndUpdate(
             filter,
             { $set: update },

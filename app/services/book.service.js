@@ -9,9 +9,12 @@ class BookService {
         const book = {
             idBook: payload.idBook,
             title: payload.title,
+            description: payload.description,
+            category: payload.category,
             price: payload.price,
-            quantity: payload.quantity,
-            release: payload.release ? new Date(payload.release) : undefined,
+            totalCopies: payload.totalCopies, // tổng số sách
+            availableCopies: payload.availableCopies, // số sách còn lại để cho mượn
+            releaseDate: payload.releaseDate ? new Date(payload.releaseDate) : undefined,
             publisher: payload.publisher,
             author: payload.author,
         };
@@ -43,6 +46,10 @@ class BookService {
         return await this.Book.findOne({
             _id: ObjectId.isValid(id) ? new ObjectId(id) : null
         });
+    }
+
+    async findByIdBook(idBook) {
+        return await this.Book.findOne({ idBook: idBook });
     }
 
     async update(id, payload) {

@@ -9,12 +9,12 @@ class StaffService {
         const staff = {
             idStaff: payload.idStaff,
             nameStaff: payload.nameStaff,
-            passwordStaff: payload.passwordStaff,
             roleStaff: payload.roleStaff,
             addressStaff: payload.addressStaff,
             phoneStaff: payload.phoneStaff,
+            username: payload.username,
+            password: payload.password,
         };
-        
         Object.keys(staff).forEach(
             (key) => staff[key] === undefined && delete staff[key]
         );
@@ -23,12 +23,8 @@ class StaffService {
 
     async create(payload) {
         const staff = this.extractStaffData(payload);
-        const result = await this.Staff.findOneAndUpdate(
-            staff,
-            { $set: staff },
-            { returnDocument: 'after', upsert: true }
-        );
-        return result;
+        const result = await this.Staff.insertOne(staff);
+        return staff;
     }
 
     async find(filter) {
@@ -36,41 +32,50 @@ class StaffService {
         return await cursor.toArray();
     }
 
-    async findByName(name) {
-        return await this.find({
-            name: { $regex: new RegExp(name), $options: 'i' }
-        });
+    async findByUsername(username) {
+        return await this.Staff.findOne({ username: username });
     }
 
-    async findById(id) {
-        return await this.Staff.findOne({
-            _id: ObjectId.isValid(id) ? new ObjectId(id) : null
-        });
+    async findById(idOrUsername) {
+        if (ObjectId.isValid(idOrUsername)) {
+            return await this.Staff.findOne({ _id: new ObjectId(idOrUsername) });
+        }
+        return await this.Staff.findOne({ username: idOrUsername });
     }
 
-    async update(id, payload) {
-        const filter = { 
-            _id: ObjectId.isValid(id) ? new ObjectId(id) : null 
-        };
+    async update(idOrUsername, payload) {
+        let filter;
+        if (ObjectId.isValid(idOrUsername)) {
+            filter = { _id: new ObjectId(idOrUsername) };
+        } else {
+            filter = { username: idOrUsername };
+        }
         const update = this.extractStaffData(payload);
         const result = await this.Staff.findOneAndUpdate(
             filter,
             { $set: update },
             { returnDocument: "after" }
         );
-        return result;
+        if (result.value) {
+            return result.value;
+        }
+        const updatedDoc = await this.Staff.findOne(filter);
+        return updatedDoc;
     }
 
-    async delete(id) {
-        const result = await this.Staff.findOneAndDelete({
-            _id: ObjectId.isValid(id) ? new ObjectId(id) : null
-        });
-        return result;
+    async delete(idOrUsername) {
+        const filter = { username: idOrUsername };
+        const staff = await this.Staff.findOne(filter);
+        if (!staff) {
+            return null;
+        }
+        await this.Staff.deleteOne(filter);
+        return staff;
     }
 
     async deleteAll() {
         const result = await this.Staff.deleteMany({});
-        return result;
+        return result.deletedCount;
     }
 }
 

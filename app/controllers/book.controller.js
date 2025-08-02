@@ -10,7 +10,10 @@ exports.create = async (req, res, next) => {
     try {
         const bookService = new BookService(MongoDB.client);
         const document = await bookService.create(req.body);
-        return res.send(document);
+        return res.send({
+            message: "Book was created successfully",
+            data: document
+        });
     } catch (error) {
         return next(
             new ApiError(500, "An error occurred while creating the book")
@@ -41,12 +44,18 @@ exports.findAll = async (req, res, next) => {
 exports.findOne = async (req, res, next) => {
     try {
         const bookService = new BookService(MongoDB.client);
-        const document = await bookService.findById(req.params.id);
+        let document;
+        if (req.params.id.length === 24 && /^[a-fA-F0-9]+$/.test(req.params.id)) {
+            document = await bookService.findById(req.params.id);
+        } else {
+            document = await bookService.findByIdBook(req.params.id);
+        }
         if (!document) {
             return next(new ApiError(404, "Book not found"));
         }
         return res.send(document);
     } catch (error) {
+        console.error(error); // Thêm dòng này để debug lỗi thực tế
         return next(
             new ApiError(
                 500, 
@@ -92,20 +101,6 @@ exports.delete = async (req, res, next) => {
     }
 };
 
-exports.findAllFavorite = async (_req, res, next) => {
-    try {
-        const bookService = new BookService(MongoDB.client);
-        const documents = await bookService.findFavorite();
-        return res.send(documents);
-    } catch (error) {
-        return next(
-            new ApiError(
-                500, 
-                "An error occurred while retrieving favorite books")
-        );
-    }
-};
-
 exports.deleteAll = async (_req, res, next) => {
     try {
         const bookService = new BookService(MongoDB.client);
@@ -116,6 +111,49 @@ exports.deleteAll = async (_req, res, next) => {
     } catch (error) {
         return next(
             new ApiError(500, "An error occurred while removing all books")
+        );
+    }
+};
+
+exports.getAllBook = async (req, res, next) => {
+    try {
+        const bookService = new BookService(MongoDB.client);
+        const documents = await bookService.find({});
+        return res.send(documents);
+    } catch (error) {
+        return next(
+            new ApiError(500, "An error occurred while retrieving all books")
+        );
+    }
+};
+
+exports.getAvailableBook = async (req, res, next) => {
+    try {
+        const bookService = new BookService(MongoDB.client);
+        const documents = await bookService.find({ availableCopies: { $gt: 0 } });
+        return res.send(documents);
+    } catch (error) {
+        return next(
+            new ApiError(500, "An error occurred while retrieving available books")
+        );
+    }
+};
+
+exports.findByTitle = async (req, res, next) => {
+    try {
+        const bookService = new BookService(MongoDB.client);
+        const title = req.query.title;
+        if (!title) {
+            return next(new ApiError(400, "Title query is required"));
+        }
+        const documents = await bookService.findByTitle(title);
+        return res.send(documents);
+    } catch (error) {
+        return next(
+            new ApiError(
+                500,
+                `Error retrieving books with title=${req.query.title}`
+            )
         );
     }
 };

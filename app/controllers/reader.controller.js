@@ -3,8 +3,8 @@ const MongoDB = require("../utils/mongodb.util");
 const ApiError = require("../api-error");
 
 exports.create = async (req, res, next) => {
-    if (!req.body?.name) {
-        return next(new ApiError(400, "Name can not be empty"));
+    if (!req.body?.lastNameReader || !req.body?.firstNameReader) {
+        return next(new ApiError(400, "Reader's first and last name cannot be empty"));
     }
 
     try {
@@ -67,7 +67,12 @@ exports.update = async (req, res, next) => {
         if (!document) {
             return next(new ApiError(404, "Reader not found"));
         }
-        return res.send({ message: "Reader was updated successfully" });
+        // Trả về thông tin reader vừa update (không trả về password)
+        const { password, ...readerWithoutPassword } = document;
+        return res.send({
+            message: "Reader was updated successfully",
+            reader: readerWithoutPassword
+        });
     } catch (error) {
         return next(
             new ApiError(500, `Error updating reader with id=${req.params.id}`)
@@ -82,8 +87,15 @@ exports.delete = async (req, res, next) => {
         if (!document) {
             return next(new ApiError(404, "Reader not found"));
         }
-        return res.send({ message: "Reader was deleted successfully" });
+        // Trả về thông tin reader đã xóa (không trả về password)
+        const { password, ...readerWithoutPassword } = document;
+        return res.send({
+            message: "Reader was deleted successfully",
+            reader: readerWithoutPassword
+        });
     } catch (error) {
+        // Có thể log error để debug chi tiết hơn
+        // console.error(error);
         return next(
             new ApiError(
                 500, 
@@ -92,19 +104,6 @@ exports.delete = async (req, res, next) => {
     }
 };
 
-exports.findAllFavorite = async (_req, res, next) => {
-    try {
-        const readerService = new ReaderService(MongoDB.client);
-        const documents = await readerService.findFavorite();
-        return res.send(documents);
-    } catch (error) {
-        return next(
-            new ApiError(
-                500, 
-                "An error occurred while retrieving favorite readers")
-        );
-    }
-};
 
 exports.deleteAll = async (_req, res, next) => {
     try {
@@ -117,5 +116,28 @@ exports.deleteAll = async (_req, res, next) => {
         return next(
             new ApiError(500, "An error occurred while removing all readers")
         );
+    }
+};
+
+exports.register = async (req, res, next) => {
+    const { username, password, lastNameReader, firstNameReader } = req.body;
+    if (!username || !password || !lastNameReader || !firstNameReader) {
+        return next(new ApiError(400, "Username, password, first and last name are required"));
+    }
+    try {
+        const readerService = new ReaderService(MongoDB.client);
+        const existing = await readerService.findByUsername(username);
+        if (existing) {
+            return next(new ApiError(409, "Username already exists"));
+        }
+        const document = await readerService.create(req.body);
+        // Không trả về password
+        const { password: _, ...readerWithoutPassword } = document;
+        return res.status(201).send({
+            message: "Register successfully",
+            reader: readerWithoutPassword
+        });
+    } catch (error) {
+        return next(new ApiError(500, "An error occurred during registration"));
     }
 };

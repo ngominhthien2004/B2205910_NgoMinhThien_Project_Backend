@@ -1,19 +1,16 @@
 const express = require('express');
-const books = require('../controllers/book.controller');
+const publishers = require('../controllers/publisher.controller');
 
 const router = express.Router();
 
 router.route('/')
-    .get(books.findAll)
-    .post(books.create)
-    .delete(books.deleteAll);
-
-router.route('/favorite')
-    .get(books.findAllFavorite);
+    .get(publishers.findAll)
+    .post(publishers.create)
+    .delete(publishers.deleteAll);
 
 router.route('/:id')
-    .get(books.findOne)
-    .put(books.update)
-    .delete(books.delete);
+    .get(publishers.findOne)
+    .put(publishers.update)
+    .delete(publishers.delete);
 
 module.exports = router;
