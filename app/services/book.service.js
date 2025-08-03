@@ -28,7 +28,8 @@ class BookService {
     async create(payload) {
         const book = this.extractBookData(payload);
         const result = await this.Book.insertOne(book);
-        return result;
+        // Trả về document vừa tạo (có _id)
+        return result.insertedId ? { ...book, _id: result.insertedId } : null;
     }
 
     async find(filter) {
@@ -62,19 +63,21 @@ class BookService {
             { $set: update },
             { returnDocument: "after" }
         );
-        return result;
+        // Trả về document sau khi cập nhật
+        return result.value;
     }
 
     async delete(id) {
         const result = await this.Book.findOneAndDelete({
             _id: ObjectId.isValid(id) ? new ObjectId(id) : null
         });
-        return result;
+        // Trả về document đã xóa
+        return result.value;
     }
 
     async deleteAll() {
         const result = await this.Book.deleteMany({});
-        return result;
+        return result.deletedCount;
     }
 }
 

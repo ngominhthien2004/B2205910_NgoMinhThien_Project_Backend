@@ -3,7 +3,6 @@ const MongoDB = require("../utils/mongodb.util");
 const ApiError = require("../api-error");
 
 exports.create = async (req, res, next) => {
-    // Sửa lại kiểm tra tên trường
     if (!req.body?.namePublisher) {
         return next(new ApiError(400, "namePublisher can not be empty"));
     }

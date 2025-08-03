@@ -27,7 +27,8 @@ class ReaderService {
     async create(payload) {
         const reader = this.extractReaderData(payload);
         const result = await this.Reader.insertOne(reader);
-        return reader;
+        // Trả về document vừa tạo (có _id)
+        return result.insertedId ? { ...reader, _id: result.insertedId } : null;
     }
 
     async find(filter) {
@@ -46,41 +47,26 @@ class ReaderService {
         return await this.Reader.findOne({ username: idOrUsername });
     }
 
-    async update(idOrUsername, payload) {
-        let filter;
-        if (ObjectId.isValid(idOrUsername)) {
-            filter = { _id: new ObjectId(idOrUsername) };
-        } else {
-            filter = { username: idOrUsername };
-        }
+    async update(id, payload) {
+        if (!ObjectId.isValid(id)) return null;
+        const filter = { _id: new ObjectId(id) };
         const update = this.extractReaderData(payload);
         const result = await this.Reader.findOneAndUpdate(
             filter,
             { $set: update },
             { returnDocument: "after" }
         );
-        if (result.value) {
-            return result.value;
-        }
-        // Nếu không trả về document, thử truy vấn lại
-        const updatedDoc = await this.Reader.findOne(filter);
-        return updatedDoc;
+        // Trả về document sau khi cập nhật
+        return result.value;
     }
 
-    async delete(idOrUsername) {
-        let filter;
-        if (ObjectId.isValid(idOrUsername)) {
-            filter = { _id: new ObjectId(idOrUsername) };
-        } else {
-            filter = { username: idOrUsername };
-        }
-        // Lấy thông tin trước khi xóa
-        const reader = await this.Reader.findOne(filter);
-        if (!reader) {
-            return null;
-        }
-        await this.Reader.deleteOne(filter);
-        return reader;
+    async delete(id) {
+        if (!ObjectId.isValid(id)) return null;
+        const result = await this.Reader.findOneAndDelete({
+            _id: new ObjectId(id)
+        });
+        // Trả về document đã xóa
+        return result.value;
     }
 
     async deleteAll() {

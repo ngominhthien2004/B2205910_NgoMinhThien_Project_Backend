@@ -10,7 +10,12 @@ exports.create = async (req, res, next) => {
     try {
         const readerService = new ReaderService(MongoDB.client);
         const document = await readerService.create(req.body);
-        return res.send(document);
+        // Trả về document vừa tạo (không trả về password)
+        const { password, ...readerWithoutPassword } = document;
+        return res.send({
+            message: "Reader created successfully",
+            reader: readerWithoutPassword
+        });
     } catch (error) {
         return next(
             new ApiError(500, "An error occurred while creating the reader")
