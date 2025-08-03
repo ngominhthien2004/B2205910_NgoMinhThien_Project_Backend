@@ -109,27 +109,6 @@ exports.delete = async (req, res, next) => {
     }
 };
 
-exports.register = async (req, res, next) => {
-    const { username, password, nameStaff } = req.body;
-    if (!username || !password || !nameStaff) {
-        return next(new ApiError(400, "Username, password, and staff name are required"));
-    }
-    try {
-        const staffService = new StaffService(MongoDB.client);
-        const existing = await staffService.findByUsername(username);
-        if (existing) {
-            return next(new ApiError(409, "Username already exists"));
-        }
-        const document = await staffService.create(req.body);
-        const { password: _, passwordStaff, ...staffWithoutPassword } = document;
-        return res.status(201).send({
-            message: "Register successfully",
-            staff: staffWithoutPassword
-        });
-    } catch (error) {
-        return next(new ApiError(500, "An error occurred during registration"));
-    }
-};
 
 exports.deleteAll = async (_req, res, next) => {
     try {
