@@ -64,7 +64,12 @@ class StaffService {
     }
 
     async delete(idOrUsername) {
-        const filter = { username: idOrUsername };
+        let filter;
+        if (ObjectId.isValid(idOrUsername)) {
+            filter = { _id: new ObjectId(idOrUsername) };
+        } else {
+            filter = { username: idOrUsername };
+        }
         const staff = await this.Staff.findOne(filter);
         if (!staff) {
             return null;

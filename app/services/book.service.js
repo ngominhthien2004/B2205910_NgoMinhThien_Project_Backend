@@ -72,7 +72,7 @@ class BookService {
             _id: ObjectId.isValid(id) ? new ObjectId(id) : null
         });
         // Trả về document đã xóa
-        return result.value;
+        return result;
     }
 
     async deleteAll() {
