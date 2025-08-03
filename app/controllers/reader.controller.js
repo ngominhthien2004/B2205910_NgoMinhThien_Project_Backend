@@ -4,7 +4,7 @@ const ApiError = require("../api-error");
 
 exports.create = async (req, res, next) => {
     if (!req.body?.lastNameReader || !req.body?.firstNameReader) {
-        return next(new ApiError(400, "Reader's first and last name cannot be empty"));
+        return next(new ApiError(400, "Tên và họ của độc giả không được để trống"));
     }
 
     try {
@@ -13,12 +13,12 @@ exports.create = async (req, res, next) => {
         // Trả về document vừa tạo (không trả về password)
         const { password, ...readerWithoutPassword } = document;
         return res.send({
-            message: "Reader created successfully",
+            message: "Độc giả được tạo thành công",
             reader: readerWithoutPassword
         });
     } catch (error) {
         return next(
-            new ApiError(500, "An error occurred while creating the reader")
+            new ApiError(500, "Lỗi xảy ra khi tạo độc giả")
         );
     }
 };
@@ -36,7 +36,7 @@ exports.findAll = async (req, res, next) => {
         } 
     } catch (error) {
         return next(
-            new ApiError(500, "An error occurred while retrieving readers")
+            new ApiError(500, "Lỗi xảy ra khi truy xuất danh sách độc giả")
         );
     }
 
@@ -48,14 +48,14 @@ exports.findOne = async (req, res, next) => {
         const readerService = new ReaderService(MongoDB.client);
         const document = await readerService.findById(req.params.id);
         if (!document) {
-            return next(new ApiError(404, "Reader not found"));
+            return next(new ApiError(404, "Độc giả không tồn tại"));
         }
         return res.send(document);
     } catch (error) {
         return next(
             new ApiError(
                 500, 
-                `Error retrieving reader with id=${req.params.id}`
+                `Lỗi xảy ra khi truy xuất độc giả với id=${req.params.id}`
             )
         );
     }
@@ -63,24 +63,24 @@ exports.findOne = async (req, res, next) => {
 
 exports.update = async (req, res, next) => {
     if (Object.keys(req.body).length === 0) {
-        return next(new ApiError(400, "Data to update can not be empty"));
+        return next(new ApiError(400, "Dữ liệu để cập nhật không được để trống"));
     }
 
     try {
         const readerService = new ReaderService(MongoDB.client);
         const document = await readerService.update(req.params.id, req.body);
         if (!document) {
-            return next(new ApiError(404, "Reader not found"));
+            return next(new ApiError(404, "Độc giả không tồn tại"));
         }
-        // Trả về thông tin reader vừa update (không trả về password)
+        // Trả về thông tin độc giả vừa update (không trả về password)
         const { password, ...readerWithoutPassword } = document;
         return res.send({
-            message: "Reader was updated successfully",
+            message: "Độc giả được cập nhật thành công",
             reader: readerWithoutPassword
         });
     } catch (error) {
         return next(
-            new ApiError(500, `Error updating reader with id=${req.params.id}`)
+            new ApiError(500, `Lỗi xảy ra khi cập nhật độc giả với id=${req.params.id}`)
         );
     }
 };
@@ -90,12 +90,12 @@ exports.delete = async (req, res, next) => {
         const readerService = new ReaderService(MongoDB.client);
         const document = await readerService.delete(req.params.id);
         if (!document) {
-            return next(new ApiError(404, "Reader not found"));
+            return next(new ApiError(404, "Độc giả không tồn tại"));
         }
-        // Trả về thông tin reader đã xóa (không trả về password)
+        // Trả về thông tin độc giả đã xóa (không trả về password)
         const { password, ...readerWithoutPassword } = document;
         return res.send({
-            message: "Reader was deleted successfully",
+            message: "Độc giả đã được xóa thành công",
             reader: readerWithoutPassword
         });
     } catch (error) {
@@ -104,7 +104,7 @@ exports.delete = async (req, res, next) => {
         return next(
             new ApiError(
                 500, 
-                `Could not delete reader with id=${req.params.id}`)
+                `Lỗi xảy ra khi xóa độc giả với id=${req.params.id}`)
         );
     }
 };
@@ -115,11 +115,11 @@ exports.deleteAll = async (_req, res, next) => {
         const readerService = new ReaderService(MongoDB.client);
         const deletedCount = await readerService.deleteAll();
         return res.send({ 
-            message: `${deletedCount} readers were deleted successfully`
+            message: `${deletedCount} độc giả đã được xóa thành công`
          });
     } catch (error) {
         return next(
-            new ApiError(500, "An error occurred while removing all readers")
+            new ApiError(500, "Lỗi xảy ra khi xóa tất cả độc giả")
         );
     }
 };
@@ -127,22 +127,22 @@ exports.deleteAll = async (_req, res, next) => {
 exports.register = async (req, res, next) => {
     const { username, password, lastNameReader, firstNameReader } = req.body;
     if (!username || !password || !lastNameReader || !firstNameReader) {
-        return next(new ApiError(400, "Username, password, first and last name are required"));
+        return next(new ApiError(400, "Tên đăng nhập, mật khẩu, họ và tên là bắt buộc"));
     }
     try {
         const readerService = new ReaderService(MongoDB.client);
         const existing = await readerService.findByUsername(username);
         if (existing) {
-            return next(new ApiError(409, "Username already exists"));
+            return next(new ApiError(409, "Tên đăng nhập đã tồn tại"));
         }
         const document = await readerService.create(req.body);
         // Không trả về password
         const { password: _, ...readerWithoutPassword } = document;
         return res.status(201).send({
-            message: "Register successfully",
+            message: "Đăng ký thành công",
             reader: readerWithoutPassword
         });
     } catch (error) {
-        return next(new ApiError(500, "An error occurred during registration"));
+        return next(new ApiError(500, "Lỗi xảy ra trong quá trình đăng ký"));
     }
 };

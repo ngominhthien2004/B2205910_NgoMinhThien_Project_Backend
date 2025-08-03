@@ -119,26 +119,3 @@ exports.deleteAll = async (_req, res, next) => {
         );
     }
 };
-
-exports.changeStatus = async (req, res, next) => {
-    const { status } = req.body;
-    if (!status) {
-        return next(new ApiError(400, "Status is required"));
-    }
-    try {
-        const muonsachService = new MuonSachService(MongoDB.client);
-        const updated = await muonsachService.update(req.params.id, { status });
-        console.log("Controller updated:", updated);
-        if (updated === null || updated === undefined) {
-            return next(new ApiError(404, "Không tìm thấy phiếu mượn sách"));
-        }
-        return res.send({
-            message: "Cập nhật trạng thái phiếu mượn sách thành công",
-            muonsach: updated
-        });
-    } catch (error) {
-        return next(
-            new ApiError(500, `Error updating status for muonsach with id=${req.params.id}`)
-        );
-    }
-};

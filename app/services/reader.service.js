@@ -57,7 +57,7 @@ class ReaderService {
             { returnDocument: "after" }
         );
         // Trả về document sau khi cập nhật
-        return result.value;
+        return result;
     }
 
     async delete(id) {
@@ -66,7 +66,7 @@ class ReaderService {
             _id: new ObjectId(id)
         });
         // Trả về document đã xóa
-        return result.value;
+        return result;
     }
 
     async deleteAll() {

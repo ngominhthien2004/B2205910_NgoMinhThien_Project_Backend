@@ -13,7 +13,4 @@ router.route('/:id')
     .put(muonsach.update)
     .delete(muonsach.delete);
 
-router.route('/:id/status')
-    .put(muonsach.changeStatus);
-
 module.exports = router;
