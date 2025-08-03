@@ -74,8 +74,8 @@ exports.update = async (req, res, next) => {
     try {
         const muonsachService = new MuonSachService(MongoDB.client);
         const updated = await muonsachService.update(req.params.id, req.body);
-        if (!updated) {
-            return next(new ApiError(404, "MuonSach not found"));
+        if (updated === null || updated === undefined) {
+            return next(new ApiError(404, "Không tìm thấy phiếu mượn để cập nhật sách với id=" + req.params.id));
         }
         return res.send({
             message: "Cập nhật phiếu mượn sách thành công",
@@ -93,7 +93,7 @@ exports.delete = async (req, res, next) => {
         const muonsachService = new MuonSachService(MongoDB.client);
         const document = await muonsachService.delete(req.params.id);
         if (!document) {
-            return next(new ApiError(404, "MuonSach not found"));
+            return next(new ApiError(404, "Không tìm thấy phiếu mượn sách để xóa với id=" + req.params.id));
         }
         return res.send({ message: "Xóa phiếu mượn sách thành công" });
     } catch (error) {
@@ -130,7 +130,7 @@ exports.changeStatus = async (req, res, next) => {
         const updated = await muonsachService.update(req.params.id, { status });
         console.log("Controller updated:", updated);
         if (updated === null || updated === undefined) {
-            return next(new ApiError(404, "MuonSach not found"));
+            return next(new ApiError(404, "Không tìm thấy phiếu mượn sách"));
         }
         return res.send({
             message: "Cập nhật trạng thái phiếu mượn sách thành công",

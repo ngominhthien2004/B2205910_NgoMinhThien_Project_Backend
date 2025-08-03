@@ -95,7 +95,6 @@ class MuonSachService {
                 await bookService.update(book._id, { availableCopies: book.availableCopies + 1 });
             }
         }
-        // --- hết bổ sung ---
 
         // Check if status is being updated to "Đã trả" hoặc "returned"
         if (update.status === "Đã trả" || update.status === "returned") {
@@ -122,10 +121,10 @@ class MuonSachService {
         const result = await this.MuonSach.findOneAndUpdate(
             filter,
             { $set: update },
-            { returnOriginal: false }
+            { returnDocument: "after" }
         );
         console.log("Update result:", result);
-        return result.value;
+        return result;
     }
 
     async delete(id) {
@@ -136,7 +135,7 @@ class MuonSachService {
             _id: new ObjectId(id)
         });
         // Trả về document đã xóa
-        return result.value;
+        return result;
     }
 
     async deleteAll() {
