@@ -11,13 +11,15 @@ router.route('/')
 router.route('/available')
     .get(books.getAvailableBook); // lấy sách còn availableCopies > 0
 
+
+router.route('/title')
+    .get(books.findByTitle); // tìm kiếm sách theo tiêu đề
+    
 router.route('/:id')
     .get(books.findOne)
     .put(books.update)
     .delete(books.delete);
 
-router.route('/title')
-    .get(books.findByTitle); // tìm kiếm sách theo tiêu đề
 
 
 module.exports = router;
