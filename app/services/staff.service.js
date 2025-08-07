@@ -60,6 +60,15 @@ class StaffService {
             filter = { username: idOrUsername };
         }
         const update = this.extractStaffData(payload);
+
+        // Nếu có trường password và không rỗng, băm mật khẩu trước khi cập nhật
+        if (update.password) {
+            update.password = await bcrypt.hash(update.password, 10);
+        } else {
+            // Nếu không gửi password mới, loại bỏ trường password khỏi update để không ghi đè thành undefined/rỗng
+            delete update.password;
+        }
+
         const result = await this.Staff.findOneAndUpdate(
             filter,
             { $set: update },
