@@ -1,4 +1,5 @@
 const { ObjectId } = require('mongodb');
+const bcrypt = require('bcryptjs');
 
 class StaffService {
     constructor(client) {
@@ -23,8 +24,11 @@ class StaffService {
 
     async create(payload) {
         const staff = this.extractStaffData(payload);
+        if (staff.password) {
+            staff.password = await bcrypt.hash(staff.password, 10);
+        }
         const result = await this.Staff.insertOne(staff);
-        return staff;
+        return result.insertedId ? { ...staff, _id: result.insertedId } : null;
     }
 
     async find(filter) {
@@ -34,6 +38,11 @@ class StaffService {
 
     async findByUsername(username) {
         return await this.Staff.findOne({ username: username });
+    }
+
+    async comparePassword(staff, password) {
+        if (!staff || !staff.password) return false;
+        return await bcrypt.compare(password, staff.password);
     }
 
     async findById(idOrUsername) {

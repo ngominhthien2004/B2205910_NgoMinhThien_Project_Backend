@@ -1,4 +1,5 @@
 const { ObjectId } = require('mongodb');
+const bcrypt = require('bcryptjs'); // thêm dòng này
 
 class ReaderService {
     constructor(client) {
@@ -26,6 +27,9 @@ class ReaderService {
 
     async create(payload) {
         const reader = this.extractReaderData(payload);
+        if (reader.password) {
+            reader.password = await bcrypt.hash(reader.password, 10); // băm mật khẩu
+        }
         const result = await this.Reader.insertOne(reader);
         // Trả về document vừa tạo (có _id)
         return result.insertedId ? { ...reader, _id: result.insertedId } : null;
@@ -72,6 +76,11 @@ class ReaderService {
     async deleteAll() {
         const result = await this.Reader.deleteMany({});
         return result.deletedCount;
+    }
+
+    async comparePassword(reader, password) {
+        if (!reader || !reader.password) return false;
+        return await bcrypt.compare(password, reader.password);
     }
 }
 

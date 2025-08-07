@@ -37,7 +37,7 @@ app.post('/api/login', async (req, res, next) => {
     // Thử đăng nhập staff trước
     const staffService = new StaffService(MongoDB.client);
     const staff = await staffService.findByUsername(username);
-    if (staff && staff.password === password) {
+    if (staff && await staffService.comparePassword(staff, password)) {
         const { password: _, passwordStaff, ...staffWithoutPassword } = staff;
         return res.send({
             message: "Login successfully",
@@ -48,7 +48,7 @@ app.post('/api/login', async (req, res, next) => {
     // Nếu không phải staff, thử reader
     const readerService = new ReaderService(MongoDB.client);
     const reader = await readerService.findByUsername(username);
-    if (reader && reader.password === password) {
+    if (reader && await readerService.comparePassword(reader, password)) {
         const { password: _, ...readerWithoutPassword } = reader;
         return res.send({
             message: "Login successfully",
