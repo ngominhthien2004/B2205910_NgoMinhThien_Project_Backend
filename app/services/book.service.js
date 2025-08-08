@@ -64,7 +64,7 @@ class BookService {
             { returnDocument: "after" }
         );
         // Trả về document sau khi cập nhật
-        return result.value;
+        return result;
     }
 
     async delete(id) {
